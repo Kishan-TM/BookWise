@@ -12,7 +12,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Access the API key
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,6 +28,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-b^(1$qm1wh7=8hfkyx%y0)8e$a&+1l9zqz!rp^ir7w&+2##)dn'
+# settings.py
+
+GOOGLE_API_KEY = 'AIzaSyDrfUCDxryAQ5rDyiyswoEn5zWM3vg5VB8'  # Replace with your actual API key
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

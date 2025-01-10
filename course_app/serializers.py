@@ -15,6 +15,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "username": self.user.username,
             "email": self.user.email,
         }
+        # print("USER DATA: "+data)
         return data
 
 
@@ -57,41 +58,105 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user_reg = UserReg.objects.create(user=user, **validated_data)
         return user_reg
     
-
+# class ViewUserProfileSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model= UserReg
+#         fields=["username","name","email","Phone_number"]
 
 from rest_framework import serializers
 from .models import Course
 
+# class AddCourseSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Course
+#         fields = "__all__"
+
+#     def validate_image(self, value):
+#         if not value:
+#             raise serializers.ValidationError("Image is required.")
+#         return value
 class AddCourseSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Course
         fields = "__all__"
+
+    def get_image(self, obj):
+        # Return relative path starting with /media/ instead of full URL
+        if obj.image:
+            return f"/media/{obj.image.name}"
+        return None
 
     def validate_image(self, value):
         if not value:
             raise serializers.ValidationError("Image is required.")
         return value
 
+
 class EditCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = '__all__'
 
-class SemesterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model= Semester
-        fields= ['course','name']
-
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
-        model =Subject
-        fields='__all__'
+        model = Subject
+        fields = ['id', 'name', 'description']
 
-# class ReviewSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Review
-#         fields = ['user', 'course', 'review_text', 'rating', 'created_at']
-#         read_only_fields = ['created_at']  # We do not want users to set the creation time manually
+class SemesterSerializer(serializers.ModelSerializer):
+    subjects = SubjectSerializer(many=True, source='subject_set')  # Link to related subjects
+
+    class Meta:
+        model = Semester
+        fields = ['id', 'name', 'subjects']
+
+from rest_framework import serializers
+from .models import Course
+from .serializers import SemesterSerializer
+
+class CourseSerializer(serializers.ModelSerializer):
+    semesters = SemesterSerializer(many=True, source='semester_set')  # Link to related semesters
+
+    class Meta:
+        model = Course
+        fields = ['id', 'course_name', 'university', 'image', 'description', 'published_at', 'semesters']
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError("Image is required.")
+        return value
+
+    def to_representation(self, instance):
+        # Get the default representation
+        representation = super().to_representation(instance)
+        
+        # Modify the image field to return the correct media URL
+        if instance.image:
+            representation['image'] = instance.image.url  # Returns the media URL as /media/...
+        
+        return representation
+
+
+class ModuleSerializer(serializers.ModelSerializer):
+    content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Module
+        fields = ['id', 'subject', 'name', 'content']
+
+    def get_content(self, obj):
+        # Return relative path starting with /media/ instead of full URL
+        if obj.content:
+            return f"/media/{obj.content.name}"
+        return None
+    
+class ViewSubjectSerializer(serializers.ModelSerializer):
+    modules = ModuleSerializer(many=True, read_only=True)  # Nested modules
+
+    class Meta:
+        model = Subject
+        fields = ['id', 'name', 'description', 'modules']
 
 #     def validate(self, data):
 #         user = data.get('user')
@@ -133,3 +198,8 @@ class ViewReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review  # Ensure this is 'model' (singular)
         fields = '__all__'  # Or specify the fields explicitly if needed
+
+# class SubjectSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Subject
+#         fields = ['id', 'name', 'module', 'description']

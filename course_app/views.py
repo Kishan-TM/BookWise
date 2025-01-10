@@ -67,13 +67,13 @@ class UserRegistrationView(viewsets.ModelViewSet):
 
 
 
-
+from django.views.decorators.csrf import csrf_exempt
 class AddCourseView(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = AddCourseSerializer
     permission_classes = [IsAdminUser] 
     http_method_names = ['post']
-
+    @csrf_exempt
     def create(self, request, *args, **kwargs):
         # Check if the user is an admin
         if not request.user.is_superuser:
@@ -144,14 +144,84 @@ class AddSubjectView(viewsets.ModelViewSet):
         
 
 
+# class ViewCourseView(viewsets.ModelViewSet):
+#     queryset = Course.objects.all()
+#     serializer_class = AddCourseSerializer
+#     permission_classes = [AllowAny]
+
+#     def  list(self, request, *args, **kwargs):
+#         return super().list(request, *args, **kwargs)
+    
+    
 class ViewCourseView(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = AddCourseSerializer
     permission_classes = [AllowAny]
 
-    def  list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-    
+    def list(self, request, *args, **kwargs):
+        # Fetch course_id from query parameters
+        course_id = request.query_params.get('id')  # Use ?id=<value> in the URL
+
+        if course_id:
+            try:
+                # Filter the course by ID
+                course = self.queryset.get(id=course_id)
+                serializer = self.get_serializer(course)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Course.DoesNotExist:
+                return Response(
+                    {"detail": "Course not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # If no ID is provided, return all courses
+            return super().list(request, *args, **kwargs)
+
+class CourseViewSet(viewsets.ModelViewSet):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        course_id = request.query_params.get('id')  # Use ?id=<value> in the URL
+
+        if course_id:
+            try:
+                course = self.queryset.get(id=course_id)
+                serializer = self.get_serializer(course)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Course.DoesNotExist:
+                return Response(
+                    {"detail": "Course not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return super().list(request, *args, **kwargs)
+        
+# class SubjectViewSet(viewsets.ModelViewSet):
+#     queryset = Subject.objects.all()
+#     serializer_class = SubjectSerializer
+#     permission_classes = [AllowAny]
+
+#     def list(self, request, *args, **kwargs):
+#         subject_id = request.query_params.get('id')  # Use ?id=<value> in the URL
+
+#         if subject_id:
+#             try:
+#                 subject = self.queryset.get(id=subject_id)
+#                 serializer = self.get_serializer(subject)
+#                 return Response(serializer.data, status=status.HTTP_200_OK)
+#             except Subject.DoesNotExist:
+#                 return Response(
+#                     {"detail": "Subject not found."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+#         else:
+#             return super().list(request, *args, **kwargs)
+
+
+
+
 
 # class ViewSemesterView(viewsets.ModelViewSet):
 #     queryset=Semester.objects.all()
@@ -163,6 +233,29 @@ class ViewCourseView(viewsets.ModelViewSet):
 #         course= Course.objects.filter(id=course_id)
 #         return super().list(course, *args, **kwargs)
 
+# class ViewUserProfileView(viewsets.ModelViewSet):
+#     queryset = UserReg.objects.all()
+#     serializer_class = ViewUserProfileSerializer
+#     permission_classes = [AllowAny]
+
+#     def list(self, request, *args, **kwargs):
+#         # Fetch user_id from query parameters
+#         user_id = request.query_params.get('id')  #Use ?id=<value> in the URL
+
+#         if user_id:
+#             try:
+#                 # Filter the user profile by ID
+#                 user_profile = self.queryset.get(id=user_id)
+#                 serializer = self.get_serializer(user_profile)
+#                 return Response(serializer.data, status=status.HTTP_200_OK)
+#             except UserReg.DoesNotExist:
+#                 return Response(
+#                     {"detail": "User not found."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+#         else:
+#             # If no ID is provided, return all user profiles
+#             return super().list(request, *args, **kwargs)
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -185,26 +278,83 @@ class ViewSemesterView(viewsets.ModelViewSet):
             # Return all semesters if no course_id is provided
             return super().list(request, *args, **kwargs)
 
-
-
-    
 class ViewSubjectView(viewsets.ModelViewSet):
-    queryset=Subject.objects.all()
-    serializer_class=SubjectSerializer
-    permission_classes=[AllowAny]
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        # Fetch course_id from query parameters
-        semester_id = request.query_params.get('id')  # Use query params for GET request
+        # Fetch subject_id from query parameters
+        subject_id = request.query_params.get('id')  # Use query params for GET request
         
-        if semester_id:
-            # Filter semesters based on the course_id
-            filtered_subjects = self.queryset.filter(semester_id=semester_id)
-            serializer = self.get_serializer(filtered_subjects, many=True)
+        if subject_id:
+            # Filter subjects based on the subject_id
+            try:
+                subject = self.queryset.get(id=subject_id)
+                serializer = self.get_serializer(subject)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Subject.DoesNotExist:
+                return Response(
+                    {"message": "Subject not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Return all subjects if no subject_id is provided
+            serializer = self.get_serializer(self.queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+class ViewModuleView(viewsets.ModelViewSet):
+    queryset = Module.objects.all()
+    serializer_class = ModuleSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        # Fetch subject_id from query parameters
+        subject_id = request.query_params.get('subject_id')  # Use query params for GET request
+        
+        if subject_id:
+            # Filter modules based on the subject_id
+            filtered_modules = self.queryset.filter(subject_id=subject_id)
+            serializer = self.get_serializer(filtered_modules, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            # Return all semesters if no course_id is provided
-            return super().list(request, *args, **kwargs)
+            # Return all modules if no subject_id is provided
+            serializer = self.get_serializer(self.queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+
+# class ViewSubjectView(viewsets.ModelViewSet):
+#     queryset = Subject.objects.all()
+#     serializer_class = SubjectSerializer
+#     permission_classes = [AllowAny]
+
+#     def list(self, request, *args, **kwargs):
+#         # Fetch semester_id from query parameters
+#         semester_id = request.query_params.get('id')  # Use query params for GET request
+        
+#         if semester_id:
+#             # Filter subjects based on the semester_id
+#             filtered_subjects = self.queryset.filter(semester_id=semester_id)
+#             serializer = self.get_serializer(filtered_subjects, many=True)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             # Return all subjects if no semester_id is provided
+#             return super().list(request, *args, **kwargs)
+
+#     def retrieve(self, request, *args, **kwargs):
+#         # Retrieve a single subject by ID
+#         subject_id = kwargs.get('pk')  # Primary key passed in the URL
+
+#         try:
+#             subject = self.queryset.get(id=subject_id)
+#             serializer = self.get_serializer(subject)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         except Subject.DoesNotExist:
+#             return Response(
+#                 {"message": "Subject not found."},
+#                 status=status.HTTP_404_NOT_FOUND
+#             )
+
 
 class UpdateCourseView(generics.UpdateAPIView):
     serializer_class = EditCourseSerializer
@@ -305,7 +455,7 @@ class UpdateSubjectView(generics.UpdateAPIView):
 
         try:
             # Validate token
-            if not token.startswith('Bearer '):
+            if not token.startswith('Bearer'):
                 raise InvalidToken("Invalid token format")
             token = token.replace('Bearer ', '')
 
@@ -496,7 +646,6 @@ class ViewCourseReviewView(viewsets.ModelViewSet):
         return super().list(review, *args, **kwargs)
     
 
-
 class DeleteReviewView(generics.DestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ViewReviewSerializer
@@ -591,20 +740,297 @@ class BrowseCourseView(viewsets.ModelViewSet):
 #         serializer = self.get_serializer(courses, many=True)
 #         return Response(serializer.data, status=status.HTTP_200_OK)
 
+from django.http import JsonResponse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
-    # @action(detail=True, methods=['get'])
-    # def semesters(self, request, pk=None):
-    #     course = self.get_object()
-    #     semesters = Semester.objects.filter(course=course)
-    #     serializer = SemesterSerializer(semesters, many=True)
-    #     return Response(serializer.data)
+@csrf_exempt
+def check_api_key(request):
+    # Print the API key to confirm it's loaded correctly
+    api_key = settings.GOOGLE_API_KEY
+    print(f"API Key: {api_key}")  # In production, consider using logging instead of print()
+    
+    if api_key:
+        return JsonResponse({"status": "API Key is set", "api_key": api_key})
+    else:
+        return JsonResponse({"status": "API Key is not set"})
 
-    # @action(detail=True, methods=['get'])
-    # def subjects(self, request, pk=None):
-    #     course = self.get_object()
-    #     subjects = Subject.objects.filter(course=course)
-    #     serializer = SubjectSerializer(subjects, many=True)
-    #     return Response(serializer.data)
+# views.py
+from django.http import JsonResponse
+import PyPDF2
+import google.generativeai as genai
+from django.views.decorators.csrf import csrf_exempt
+
+# API configuration
+genai.configure(api_key='AIzaSyAtc75Tn9EIWHvEwbFbH2YRHXDUe-m2f7c')
+
+# Set up model generation configurations
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Safety settings for the model
+safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+]
+
+# Set up the model
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash-latest",
+    safety_settings=safety_settings,
+    generation_config=generation_config,
+)
+
+def extract_text_from_pdf(pdf_file):
+    """Extracts text from a PDF file."""
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    text = ""
+    for page_num in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[page_num]
+        text += page.extract_text()
+    return text
+
+def generate_qa(text, criteria=None):
+    """Generates questions and answers from text using optional criteria."""
+    prompt = f"Generate questions and answers from the following text:\n\n{text}\n\n"
+    if criteria:
+        prompt += f"Focus on the following criteria: {criteria}"
+
+    response = model.generate_content(prompt)
+    return response.text
+
+@csrf_exempt  # Disable CSRF validation for this view (optional, if you're using Postman or other external requests)
+def generate_pdf_qa(request):
+    """Handle PDF upload, text extraction, and Q&A generation."""
+    if request.method == 'POST' and 'pdf_file' in request.FILES:
+        pdf_file = request.FILES['pdf_file']
+        
+        # Extract text from PDF
+        text = extract_text_from_pdf(pdf_file)
+        
+        # Generate Q&A from extracted text
+        criteria = "key concepts, definitions, important events"  # Modify as needed
+        qa_output = generate_qa(text, criteria)
+        
+        # Return JSON response with Q&A output
+        return JsonResponse({"status": "success", "qa_output": qa_output})
+    
+    return JsonResponse({"status": "failure", "message": "No PDF file uploaded or invalid request method"})
 
 
+# views.py
+from django.http import JsonResponse
+import PyPDF2
+import google.generativeai as genai
+from django.views.decorators.csrf import csrf_exempt
+
+# API configuration
+genai.configure(api_key='AIzaSyAtc75Tn9EIWHvEwbFbH2YRHXDUe-m2f7c')
+
+# Set up model generation configurations
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Safety settings for the model
+safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+]
+
+# Set up the model
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash-latest",
+    safety_settings=safety_settings,
+    generation_config=generation_config,
+)
+
+def extract_text_from_pdf(pdf_file):
+    """Extracts text from a PDF file."""
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    text = ""
+    for page_num in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[page_num]
+        text += page.extract_text()
+    return text
+
+def generate_summary(text):
+    """Generates a summary from the extracted text."""
+    prompt = f"Summarize the following text:\n\n{text}\n\n"
+    
+    response = model.generate_content(prompt)
+    return response.text
+
+@csrf_exempt  # Disable CSRF validation for this view (optional, if you're using Postman or other external requests)
+def generate_pdf_summary(request):
+    """Handle PDF upload, text extraction, and summary generation."""
+    if request.method == 'POST' and 'pdf_file' in request.FILES:
+        pdf_file = request.FILES['pdf_file']
+        
+        # Extract text from PDF
+        text = extract_text_from_pdf(pdf_file)
+        
+        # Generate summary from extracted text
+        summary_output = generate_summary(text)
+        
+        # Return JSON response with summary output
+        return JsonResponse({"status": "success", "summary_output": summary_output})
+    
+    return JsonResponse({"status": "failure", "message": "No PDF file uploaded or invalid request method"})
+
+
+## qa with summary##
+
+# views.py
+# from django.http import JsonResponse
+# import PyPDF2
+# import google.generativeai as genai
+# from django.views.decorators.csrf import csrf_exempt
+
+# # API configuration
+# genai.configure(api_key='AIzaSyAtc75Tn9EIWHvEwbFbH2YRHXDUe-m2f7c')
+
+# # Set up model generation configurations
+# generation_config = {
+#     "temperature": 1,
+#     "top_p": 0.95,
+#     "top_k": 64,
+#     "max_output_tokens": 8192,
+#     "response_mime_type": "text/plain",
+# }
+
+# # Safety settings for the model
+# safety_settings = [
+#     {
+#         "category": "HARM_CATEGORY_HARASSMENT",
+#         "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+#     },
+#     {
+#         "category": "HARM_CATEGORY_HATE_SPEECH",
+#         "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+#     },
+#     {
+#         "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+#         "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+#     },
+#     {
+#         "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+#         "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+#     },
+# ]
+
+# Set up the model
+
+# model = genai.GenerativeModel(
+#     model_name="gemini-1.5-flash-latest",
+#     safety_settings=safety_settings,
+#     generation_config=generation_config,
+# )
+
+# def extract_text_from_pdf(pdf_file):
+#     """Extracts text from a PDF file."""
+#     pdf_reader = PyPDF2.PdfReader(pdf_file)
+#     text = ""
+#     for page_num in range(len(pdf_reader.pages)):
+#         page = pdf_reader.pages[page_num]
+#         text += page.extract_text()
+#     return text
+
+# def generate_qa(text, criteria=None):
+#     """Generates questions and answers from text using optional criteria."""
+#     prompt = f"Generate questions and answers from the following text:\n\n{text}\n\n"
+#     if criteria:
+#         prompt += f"Focus on the following criteria: {criteria}"
+
+#     response = model.generate_content(prompt)
+#     return response.text
+
+# def generate_summary(text):
+#     """Generates a summary of the provided text."""
+#     prompt = f"Summarize the following text:\n\n{text}"
+#     response = model.generate_content(prompt)
+#     return response.text
+
+# @csrf_exempt  # Disable CSRF validation for this view (optional, if you're using Postman or other external requests)
+# def generate_pdf_summary_qa(request):
+#     """Handle PDF upload, text extraction, and summary & Q&A generation."""
+#     if request.method == 'POST' and 'pdf_file' in request.FILES:
+#         pdf_file = request.FILES['pdf_file']
+        
+#         # Extract text from PDF
+#         text = extract_text_from_pdf(pdf_file)
+        
+#         # Generate Q&A from extracted text
+#         criteria = "key concepts, definitions, important events"  # Modify as needed
+#         qa_output = generate_qa(text, criteria)
+        
+#         # Generate Summary from extracted text
+#         summary_output = generate_summary(text)
+        
+#         # Return JSON response with Q&A and summary outputs
+#         return JsonResponse({
+#             "status": "success", 
+#             "qa_output": qa_output,
+#             "summary_output": summary_output
+#         })
+    
+#     return JsonResponse({"status": "failure", "message": "No PDF file uploaded or invalid request method"})
+
+
+
+
+class SubjectViewSet(viewsets.ModelViewSet):
+    queryset = Subject.objects.all()
+    serializer_class = ViewSubjectSerializer
+    permission_classes = [AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        subject_id = kwargs.get('pk')  # Retrieve the subject ID from URL parameter
+
+        try:
+            subject = self.queryset.get(id=subject_id)  # Fetch the specific subject
+            serializer = self.get_serializer(subject)
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data
+        except Subject.DoesNotExist:
+            return Response(
+                {"detail": "Subject not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 

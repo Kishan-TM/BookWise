@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+
 from django.contrib import admin
 from.import views
 from django.urls import path, re_path,include
@@ -31,6 +31,10 @@ router.register(r"add_course",AddCourseView)
 router.register(r"add_semester",AddSemesterView)
 router.register(r'add_subject',AddSubjectView)
 router.register(r"browse_course",BrowseCourseView,basename='browse_course')
+router.register(r'courses', CourseViewSet, basename='view_courses')
+router.register(r'subjects', SubjectViewSet, basename='viewsubject')
+
+# router.register(r'users', ViewUserProfileView, basename='user-profile')
 
 
 urlpatterns = [
@@ -62,10 +66,14 @@ urlpatterns = [
     path('view_review/',ViewCourseReviewView.as_view({'get':'list'}),name='view_review'),
     path('view_semester/',ViewSemesterView.as_view({'get':'list'}),name='view_semester'),
     path('view_subject/',ViewSubjectView.as_view({'get':'list'}),name='view_subject'),
+    path('view_module/',ViewModuleView.as_view({'get':'list'}),name='view_module'),
     path('delete_review/',DeleteReviewView.as_view(),name='delete_review'),
     path('delete_semester/',DeleteSemesterView.as_view(),name='delete_semester'),
     path('delete_subject/',DeleteSubjectView.as_view(),name='delete_subject'),
-    # path('browse_course/',views.BrowseCourseView.as_view({'get': 'list'}),name='browse_course'),
+    path('check-api-key/', views.check_api_key, name='check_api_key'),
+    path('generate_pdf_qa/', views.generate_pdf_qa, name='generate_pdf_qa'),
+    path('generate_pdf_summary/', views.generate_pdf_summary, name='generate_pdf_summary'),
+    #path('generate-pdf-summary-qa/', views.generate_pdf_summary_qa, name='generate_pdf_summary_qa'),
 ]
 
 
