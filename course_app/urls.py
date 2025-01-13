@@ -73,7 +73,6 @@ urlpatterns = [
     path('check-api-key/', views.check_api_key, name='check_api_key'),
     path('generate_pdf_qa/', views.generate_pdf_qa, name='generate_pdf_qa'),
     path('generate_pdf_summary/', views.generate_pdf_summary, name='generate_pdf_summary'),
-    #path('generate-pdf-summary-qa/', views.generate_pdf_summary_qa, name='generate_pdf_summary_qa'),
 ]
 
 
