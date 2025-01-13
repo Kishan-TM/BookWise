@@ -178,6 +178,7 @@ class ViewCourseView(viewsets.ModelViewSet):
             # If no ID is provided, return all courses
             return super().list(request, *args, **kwargs)
 
+
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -219,9 +220,6 @@ class CourseViewSet(viewsets.ModelViewSet):
 #                 )
 #         else:
 #             return super().list(request, *args, **kwargs)
-
-
-
 
 
 # class ViewSemesterView(viewsets.ModelViewSet):

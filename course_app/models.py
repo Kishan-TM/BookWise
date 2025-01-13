@@ -39,6 +39,7 @@ class Module(models.Model):
     #summary = models.TextField(null=True, blank=True)
     
 
+
 class Review(models.Model):     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reviews')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='reviews')
