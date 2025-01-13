@@ -171,19 +171,21 @@ from rest_framework import serializers
 from .models import Review
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source='user.id', read_only=True)  # Include user ID explicitly in the response
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
 
     class Meta:
         model = Review
         fields = ['user', 'user_id', 'course', 'review_text', 'rating', 'created_at']
-        read_only_fields = ['created_at', 'user']  # We do not want users to set the user manually
+        read_only_fields = ['created_at', 'user_id']
+        extra_kwargs = {
+            'user': {'write_only': True, 'required': False}  # Make user optional in input
+        }
 
     def validate(self, data):
-        user = data.get('user')
+        user = self.context.get('user')
         course = data.get('course')
 
-        # Ensure the user hasn't already reviewed the course
-        if Review.objects.filter(user=user, course=course).exists():
+        if user and course and Review.objects.filter(user=user, course=course).exists():
             raise serializers.ValidationError("You have already reviewed this course.")
         
         return data

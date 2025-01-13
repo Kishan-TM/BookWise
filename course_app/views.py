@@ -16,6 +16,7 @@ from django.dispatch import receiver
 from .permissions import *
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
 
 user = get_user_model()
 
@@ -604,11 +605,35 @@ class DeleteSubjectView(generics.DestroyAPIView):
 class CreateReviewView(generics.CreateAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [AllowAny]  # Only authenticated users can add reviews
+    permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        # Automatically associate the logged-in user with the review
-        serializer.save(user=self.request.user)
+    def create(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({"detail": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Add user to serializer context and request data
+        serializer = self.get_serializer(
+            data=request.data,
+            context={'user': user}
+        )
+        
+        if serializer.is_valid():
+            # Save with the user
+            serializer.save(user=user)
+            return Response(
+                {"status": "success", "message": "Review created successfully."},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            {"status": "failed", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class AddSubjectView(viewsets.ModelViewSet):
     queryset=Subject.objects.all()
@@ -646,31 +671,38 @@ class ViewCourseReviewView(viewsets.ModelViewSet):
         return super().list(review, *args, **kwargs)
     
 
+class UserReviewsView(generics.ListAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [AllowAny]  # Add this line
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        return Review.objects.filter(user_id=user_id).order_by('-created_at')
+    
+class CourseAndUserReviewsView(generics.ListAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [AllowAny]  # Add this line
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        course_id = self.kwargs.get('course_id')
+        return Review.objects.filter(user_id=user_id, course=course_id).order_by('-created_at')
+
 class DeleteReviewView(generics.DestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ViewReviewSerializer
-    permission_classes = [IsAdminUser] 
+    permission_classes = [AllowAny]  # Allow any user to delete
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request, pk=None):
         try:
-            # Get the course object based on the provided ID (in the URL)
-            review_id = request.data.get('review_id')
-            review = get_object_or_404(Review, id=review_id)
-            review.delete()  # Perform the deletion
+            review = get_object_or_404(Review, id=pk)
+            review.delete()
             return Response(
                 {
                     "status": "success",
                     "message": "Review deleted successfully."
                 },
                 status=status.HTTP_200_OK
-            )
-        except Course.DoesNotExist:
-            return Response(
-                {
-                    "status": "failed",
-                    "message": "Review not found."
-                },
-                status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             return Response(
@@ -680,7 +712,7 @@ class DeleteReviewView(generics.DestroyAPIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
 # class BrowseCourseView(viewsets.ModelViewSet):
 #     queryset=Course.objects.all()
 #     serializer_class=AddCourseSerializer
@@ -1033,4 +1065,3 @@ class SubjectViewSet(viewsets.ModelViewSet):
                 {"detail": "Subject not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
-
