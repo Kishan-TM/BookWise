@@ -38,7 +38,9 @@ class Module(models.Model):
     content = models.FileField(upload_to='subject_content/')
     #summary = models.TextField(null=True, blank=True)
     
-
+class Question(models.Model):
+    title=models.CharField(max_length=100)
+    questions= models.FileField(upload_to='Questions')
 
 class Review(models.Model):     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reviews')

@@ -29,9 +29,13 @@ class ReviewAdmin(admin.ModelAdmin):
     list_display=('user','course','review_text','rating','created_at')
     list_filter=('course',)
 
+class QuestionAdmin(admin.ModelAdmin):
+    list_display=('title','questions')
+
 admin.site.register(Course,CourseAdmin)
 admin.site.register(Semester,SemesterAdmin)
 admin.site.register(Subject,SubjectAdmin)
 admin.site.register(Module,ModuleAdmin)
 admin.site.register(Review,ReviewAdmin)
+admin.site.register(Question,QuestionAdmin)
 

@@ -167,6 +167,19 @@ class ViewSubjectSerializer(serializers.ModelSerializer):
 #             raise serializers.ValidationError("You have already reviewed this course.")
         
 #         return data
+class QuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ['id', 'title', 'questions']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Modify the 'questions' field to show only the path
+        if instance.questions:
+            data['questions'] = f"media/{instance.questions.name}"
+        return data
+    
+
 from rest_framework import serializers
 from .models import Review
 

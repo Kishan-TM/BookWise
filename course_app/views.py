@@ -200,6 +200,26 @@ class CourseViewSet(viewsets.ModelViewSet):
         else:
             return super().list(request, *args, **kwargs)
         
+class QuestionViewSet(viewsets.ModelViewSet):
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        question_id = request.query_params.get('id')  # Use ?id=<value> in the URL
+
+        if question_id:
+            try:
+                question = self.queryset.get(id=question_id)
+                serializer = self.get_serializer(question)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Question.DoesNotExist:
+                return Response(
+                    {"detail": "Question not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return super().list(request, *args, **kwargs)
 # class SubjectViewSet(viewsets.ModelViewSet):
 #     queryset = Subject.objects.all()
 #     serializer_class = SubjectSerializer

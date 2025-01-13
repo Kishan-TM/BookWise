@@ -33,6 +33,7 @@ router.register(r'add_subject',AddSubjectView)
 router.register(r"browse_course",BrowseCourseView,basename='browse_course')
 router.register(r'courses', CourseViewSet, basename='view_courses')
 router.register(r'subjects', SubjectViewSet, basename='viewsubject')
+router.register(r'questions', QuestionViewSet, basename='question')
 
 # router.register(r'users', ViewUserProfileView, basename='user-profile')
 
